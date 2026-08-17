@@ -2,6 +2,10 @@
 
 Out-of-tree DeepSeek Harness plugin (host + Web client bundle). Read [dsh-plugin-create](../deepseek-harness/.agents/skills/dsh-plugin-create/SKILL.md) for the recipe this repo follows; the harness checkout sits at `../deepseek-harness`.
 
+## dsh-at-any vs dsh-at-file
+
+dsh-at-any is a fork of dsh-at-file (MIT) that (1) raises the index cap default from 5000 to 1,000,000 (`DEFAULT_MAX_INDEXED_FILES` in `src/defaults.ts`) so large workspaces (10k+ source files) no longer lose `.java`/`.vue`/etc. from the `@` picker, and (2) keeps the walk format-agnostic so every source format is indexed (extension-less, hidden files, PDFs, images included). Artifact dirs (`target`/`dist`/`node_modules`/...) are still skipped by default. The plugin shares the `atFile` wire namespace with dsh-at-file and must NOT be enabled alongside it (replace, don't coexist).
+
 ## Layout
 
 ```
