@@ -1,0 +1,14 @@
+{
+    "name":  "dsh-at-any",
+    "description":  "Codex-style @path references for the DeepSeek Harness web GUI",
+    "version":  "0.1.0",
+    "entry":  {
+                  "name":  "dsh-at-any",
+                  "inject":  [
+
+                             ]
+              },
+    "client":  {
+                   "platform":  "web"
+               }
+}
