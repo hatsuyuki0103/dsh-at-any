@@ -99,6 +99,12 @@ Omitting `ignoreDirs` keeps the built-in list. When you provide it, include ever
 
 The active agent may lack a tool for a particular file format. DSH provides `read` for UTF-8 text and `read_image` for supported images. PDF support depends on the tools available in the session.
 
+## Troubleshooting
+
+- **Files missing from the `@` picker**: the picker index is cached per session for 30 seconds and re-walks on first search after a restart. If files are still missing after a restart, check Settings -> File mentions for an `Exact`/`Regex` filter that matches their names, and confirm the files are not inside an artifact directory (`target`/`dist`/`node_modules`/...) skipped by the default ignore list.
+- **Old plugin still active**: dsh-at-any shares the `atFile` service namespace with dsh-at-file — remove dsh-at-file from the profile (`package.json` dependency + `dsh.profile.bundles` list) before or together with installing dsh-at-any, then restart `dsh web`.
+- **Changes to `src/` require a rebuilt `lib/`**: `lib/` is committed (profile installs run without a build). Run `node build.mjs` after editing `src/` and commit both. If you only patch the built bundle, keep `src/` in sync.
+
 ## Development
 
 ```sh
