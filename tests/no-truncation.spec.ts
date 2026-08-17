@@ -101,6 +101,24 @@ describe('dsh-at-any: no truncation + all formats', () => {
     }
   })
 
+  it('ignoreFiles rules still apply on top of all-format indexing', async () => {
+    const root = await allFormatsFixture()
+    try {
+      const { files } = await indexWorkspace(root, {
+        maxFiles: 1_000_000,
+        ignoreDirs: [...DEFAULT_IGNORE_DIRS],
+        ignoreFiles: [{ kind: 'exact', pattern: 'application.yml', caseSensitive: false }],
+      })
+      const relatives = files.map(file => file.relative)
+      expect(relatives).not.toContain('src/main/resources/application.yml')
+      // Everything else stays indexed despite the filter.
+      expect(relatives).toContain('src/main/resources/schema.sql')
+      expect(relatives).toContain('src/main/java/com/example/service/OrderService0.java')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('DEFAULT_MAX_INDEXED_FILES is effectively unlimited (>= 1M)', () => {
     expect(DEFAULT_MAX_INDEXED_FILES).toBeGreaterThanOrEqual(1_000_000)
   })
