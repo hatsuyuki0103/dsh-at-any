@@ -2,6 +2,8 @@
 
 Workspace path references for the DeepSeek Harness web interface. Type `@` in the composer to search the current workspace and insert a file or directory path.
 
+**Why dsh-at-any instead of dsh-at-file**: the original plugin capped its index at 5000 entries by default, which silently dropped `.java`/`.vue` and other source files in workspaces with more files (the bug this fork fixes). dsh-at-any removes the practical cap (default 1,000,000) and indexes **every source format** — `.java`, `.vue`, `.ts`, XML, YAML, images, PDFs, extension-less and hidden files (`.env`, ...). Build-artifact directories (`target`/`dist`/`node_modules`/...) are still skipped by default.
+
 ![@ path picker](assets/screenshots/workspace-path-picker.png)
 
 ![File reference in the composer](assets/screenshots/file-mention-composer.png)
@@ -41,10 +43,12 @@ The default index skips common version-control directories, IDE metadata, depend
 ## Install or Update
 
 ```sh
-dsh plugin --profile web add https://github.com/omdsh-dev/dsh-at-any/archive/refs/tags/v0.6.0.tar.gz
+dsh plugin --profile web add https://github.com/hatsuyuki0103/dsh-at-any/archive/refs/tags/v0.1.0.tar.gz
 ```
 
-Use the same command to update an existing installation. Restart `dsh web` after installation so the Host and browser client load version `0.6.0`.
+Use the same command to update an existing installation. Restart `dsh web` after installation so the Host and browser client load version `0.1.0`.
+
+> **Replacing dsh-at-file**: this plugin shares the `atFile` service namespace with dsh-at-file, so the two must not be enabled at the same time. Migration: remove the old plugin first (edit the profile `package.json` and delete the `"dsh-at-file": "file:..."` dependency line, or run `dsh plugin --profile web remove dsh-at-file`), then install this plugin and restart `dsh web`.
 
 ## File Filters
 
@@ -69,7 +73,7 @@ Settings are saved in the DSH web profile through the plugin's own Host connecti
 
 The available options apply to the path picker index:
 
-- `maxIndexedFiles` sets the maximum number of indexed workspace entries.
+- `maxIndexedFiles` is a soft cap on indexed workspace entries, **default 1,000,000 (no practical truncation)**. It only bites for pathological workspaces with over a million entries.
 - `ignoreDirs` replaces the built-in list of directory names excluded from the picker. Set it to `[]` to index every directory.
 
 Add the complete configuration to the selected profile's `cordis.patch.yml`. The usual path is `~/.dsh/profiles/web/cordis.patch.yml`.
@@ -77,7 +81,7 @@ Add the complete configuration to the selected profile's `cordis.patch.yml`. The
 ```yaml
 - id: dsh-at-any
   config:
-    maxIndexedFiles: 10000
+    maxIndexedFiles: 100000
 ```
 
 Omitting `ignoreDirs` keeps the built-in list. When you provide it, include every directory name you want excluded.
