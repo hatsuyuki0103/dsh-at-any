@@ -2,3 +2,5 @@ node_modules/
 coverage/
 *.tsbuildinfo
 .DS_Store
+
+*.tgz
