@@ -47,8 +47,12 @@ export const DEFAULT_IGNORE_DIRS = [
   '.output',
   '.svelte-kit',
   '.angular',
+  // NOTE: 'bin' is intentionally NOT ignored. Many projects keep runnable
+  // scripts (shell/bat) in a bin/ directory, and dsh-at-any's all-source-
+  // formats promise means those must stay findable via @. This was the cause
+  // of "same-name file only shows one" reports (bin/run-*.sh was silently
+  // dropped while sh/run-*.sh was indexed).
   'build',
-  'bin',
   'dist',
   'out',
   'target',

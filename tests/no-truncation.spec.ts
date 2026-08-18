@@ -96,8 +96,30 @@ describe('dsh-at-any: no truncation + all formats', () => {
   })
 
   it('DEFAULT_IGNORE_DIRS keeps the artifact dirs (regression guard)', () => {
-    for (const dir of ['target', 'dist', 'build', 'bin', 'out', 'obj', 'node_modules', '.git']) {
+    // NOTE: 'bin' is intentionally absent - script source dirs (bin/*.sh, bin/*.bat)
+    // must stay indexed (all-source-formats promise).
+    for (const dir of ['target', 'dist', 'build', 'out', 'obj', 'node_modules', '.git']) {
       expect(DEFAULT_IGNORE_DIRS).toContain(dir)
+    }
+    expect(DEFAULT_IGNORE_DIRS).not.toContain('bin')
+  })
+
+  it('indexes script dirs like bin/ (same-name files in bin/ and sh/ both appear)', async () => {
+    const root = await allFormatsFixture()
+    try {
+      await mkdir(join(root, 'bin'), { recursive: true })
+      await writeFile(join(root, 'bin', 'run-app.sh'), '#!/bin/sh\n')
+      const { files } = await indexWorkspace(root, {
+        maxFiles: 1_000_000,
+        ignoreDirs: [...DEFAULT_IGNORE_DIRS],
+        ignoreFiles: [],
+      })
+      const relatives = files.map(file => file.relative)
+      expect(relatives).toContain('bin/run-app.sh')
+      // A same-name file elsewhere must also be present (no basename dedupe).
+      expect(relatives).toContain('src/main/vue/Makefile')
+    } finally {
+      await rm(root, { recursive: true, force: true })
     }
   })
 

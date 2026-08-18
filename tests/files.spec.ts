@@ -64,7 +64,7 @@ describe('indexWorkspace', () => {
   it('default ignores remove common IDE metadata, caches, dependencies, and build output', async () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-at-any-default-ignore-'))
     const ignored = [
-      '.idea', '.vs', '.vscode', '.settings', '.gradle', '.cxx', 'build', 'bin', 'target',
+      '.idea', '.vs', '.vscode', '.settings', '.gradle', '.cxx', 'build', 'target',
       'cmake-build-debug', '.pytest_cache', 'DerivedData', 'node_modules',
     ]
     try {

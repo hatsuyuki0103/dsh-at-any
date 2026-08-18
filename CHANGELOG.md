@@ -2,6 +2,15 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 格式，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.1] - 2026-08-18
+
+### Fixed
+
+- **`bin/` 目录被默认忽略导致同名文件只显示一个**：`bin` 从 `DEFAULT_IGNORE_DIRS` 移除——许多项目把可运行脚本（`bin/*.sh`、`bin/*.bat`）放在 `bin/`，全格式索引承诺下它必须可见。此前 `bin/run-*.sh` 被静默跳过，而 `sh/run-*.sh` 被索引，用户 @ 时只看到其中一个。
+- 同步更新 lib 产物（index.js/client.js/类型声明）与契约测试（`bin` 不再在忽略断言中，新增"bin 目录被索引 + 同名文件共存"用例）。
+
+[0.1.1]: https://github.com/hatsuyuki0103/dsh-at-any/releases/tag/v0.1.1
+
 ## [0.1.0] - 2026-08-18
 
 ### Added
