@@ -2,6 +2,15 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 格式，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.2] - 2026-09-02
+
+### Fixed
+
+- **适配 dsh-settings 0.1.2-rc.1 移除 `settingsNamespace()` 导出**：新版删除了 `settingsNamespace()` 工厂函数（改用 `SettingsNamespaceInput` 裸字符串收窄——`register/get/update` 直接接受字符串）。`src/settings.ts` 的 `AT_FILE_NAMESPACE = settingsNamespace('at-file')` 改为 `'at-file'`，移除对已删除导出的 import；否则插件加载即抛 `settingsNamespace is not a function` 导致整个 dsh 启动失败（用户从生效配置摘除后恢复）。同步更新 lib 产物（index.js/invariant.js/client.js）与契约测试。
+- build.mjs：`@deepseek-ai/schemastery` 加入 external（插件 node_modules 的本地 schemastery 为 src-only 无 lib 产物，运行时由 dsh profile 提供，与 `@deepseek-ai/dsh-*` 一致）。
+
+[0.1.2]: https://github.com/hatsuyuki0103/dsh-at-any/releases/tag/v0.1.2
+
 ## [0.1.1] - 2026-08-18
 
 ### Fixed

@@ -13,7 +13,7 @@ import { mkdirSync } from 'node:fs'
 
 mkdirSync('lib', { recursive: true })
 
-const dshExternal = ['@deepseek-ai/cordis', '@deepseek-ai/dsh-*']
+const dshExternal = ['@deepseek-ai/cordis', '@deepseek-ai/dsh-*', '@deepseek-ai/schemastery']
 
 await build({
   entryPoints: ['src/index.ts'],
