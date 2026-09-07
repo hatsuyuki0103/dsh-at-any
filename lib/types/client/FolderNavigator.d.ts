@@ -1,6 +1,6 @@
 import type { InjectFace, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
 import type { MenuState, TriggerGuard } from '@deepseek-ai/dsh-client-ui-input-trigger/client';
-import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client';
+import type { SnapshotStore } from '@deepseek-ai/dsh-client-store';
 /** Controller surface required by the navigation bridge. */
 export interface FolderNavigationController {
     readonly menu: SnapshotStore<MenuState>;

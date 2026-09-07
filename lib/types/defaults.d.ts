@@ -1,4 +1,11 @@
 import type { AtFileSettings, FileIgnoreRule, FileIgnoreRuleInput, WorkspaceIgnoreFiles } from './contract.ts';
+/**
+ * Effective default for the index cap: 1M entries means no practical
+ * truncation for real workspaces (dsh-at-file's default 5000 dropped
+ * .java/.vue files in an 11k-file workspace). Kept as a plain constant so
+ * contract tests can assert it without importing the Cordis-facing index.ts.
+ */
+export declare const DEFAULT_MAX_INDEXED_FILES = 1000000;
 /** Directory basenames omitted from the picker unless the profile supplies its own list. */
 export declare const DEFAULT_IGNORE_DIRS: readonly [".git", ".hg", ".svn", ".idea", ".vs", ".vscode", ".fleet", ".history", ".metadata", ".settings", "node_modules", "bower_components", "vendor", "Pods", ".gradle", ".kotlin", ".cxx", ".externalNativeBuild", ".dart_tool", ".swiftpm", ".build", ".cache", ".parcel-cache", ".turbo", ".nx", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox", ".venv", "venv", ".next", ".nuxt", ".output", ".svelte-kit", ".angular", "build", "dist", "out", "target", "obj", "coverage", "DerivedData", "xcuserdata", "CMakeFiles", "cmake-build-debug", "cmake-build-release", "cmake-build-relwithdebinfo", "cmake-build-minsizerel", "_deps", ".godot", "Library", "Temp", "Logs", "Binaries", "Intermediate", "Saved", "DerivedDataCache"];
 /** File basenames omitted from the picker unless the Web setting replaces the list. */

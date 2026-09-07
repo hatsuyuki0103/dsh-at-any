@@ -31,10 +31,14 @@ export declare class AtFileRuntime extends TypertRemoteService {
     /**
      * Index the addressed agent's workspace and return the bounded entry list.
      * The client caches the list per session and filters per keystroke.
+     * Concurrent calls for the same workspace share one in-flight walk (a full
+     * re-index of a large workspace takes seconds; the client fires search
+     * per keystroke, so without this every keystroke would re-walk the tree).
      * @param agent - the live agent resolved from the `agentId` wire field; its
      *   session header owns the workspace cwd.
      * @param signal - caller lifetime; the walk races it.
      * @returns workspace-root-relative entries with their absolute paths.
      */
+    private readonly inFlight;
     search(agent: Agent, signal: AbortSignal): Promise<readonly FileEntry[]>;
 }

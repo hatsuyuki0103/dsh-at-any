@@ -6,10 +6,14 @@
  */
 import type { Context } from '@deepseek-ai/cordis';
 import z from '@deepseek-ai/schemastery';
-import { type SettingsScope } from '@deepseek-ai/dsh-settings';
+import type { SettingsScope } from '@deepseek-ai/dsh-settings';
 import type { AtFileSettings } from './contract.ts';
-/** The branded namespace name (the Web allowlist must list the same string). */
-export declare const AT_FILE_NAMESPACE: import("@deepseek-ai/dsh-settings").SettingsNamespace;
+/**
+ * The settings namespace name (the Web allowlist must list the same string).
+ * Note: dsh-settings >= 0.1.2-rc.1 移除了 settingsNamespace() 导出，
+ * 改用 SettingsNamespaceInput 裸字符串收窄（register/get/update 直接接受字符串）。
+ */
+export declare const AT_FILE_NAMESPACE = "at-file";
 /** Schemastery schema of the `at-file` namespace section. */
 export declare const AtFileSettingsSchema: z<AtFileSettings>;
 /**

@@ -59,4 +59,6 @@ await build({
 })
 
 import { execFileSync } from 'node:child_process'
-execFileSync('node_modules/.bin/tsc', ['-p', 'tsconfig.json'], { stdio: 'inherit' })
+// Windows-safe tsc invocation: `node_modules/.bin/tsc` is a sh shim that
+// spawnSync cannot resolve on win32; run the JS entry through node instead.
+execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.json'], { stdio: 'inherit' })

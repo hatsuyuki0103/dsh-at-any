@@ -269,7 +269,7 @@ describe('dsh-at-any host composition', () => {
 
   it('validates configuration through the exported schema', () => {
     expect(plugin.Config({})).toEqual({
-      maxIndexedFiles: 5000,
+      maxIndexedFiles: 1_000_000,
       ignoreDirs: [...plugin.DEFAULT_IGNORE_DIRS],
     })
     expect(plugin.DEFAULT_IGNORE_FILES).toEqual(['desktop.ini', 'Thumbs.db', '.DS_Store'])

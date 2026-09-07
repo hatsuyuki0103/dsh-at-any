@@ -4,7 +4,7 @@
  * picks, lexicon rolls, and invalidation.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ClientSessionContext } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 import { createAtFileSource, INDEX_TTL_MS, MAX_CANDIDATES, SOURCE_NAME } from '../src/client/source.ts'
 import type { FileEntry } from '../src/client/remote.ts'

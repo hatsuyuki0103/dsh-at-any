@@ -4,7 +4,7 @@ import type { InjectFace, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
   InputTriggerCandidate, MenuState, TriggerGuard,
 } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
-import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { SOURCE_NAME } from './source.ts'
 
 /** Controller surface required by the navigation bridge. */

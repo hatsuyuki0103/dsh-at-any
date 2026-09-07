@@ -7,7 +7,7 @@
  */
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
-import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { apply, inject } from '../src/client/index.ts'
 import { AT_FILE_REMOTE } from '../src/client/remote.ts'
 import { NS, en, zh } from '../src/client/locales.ts'
@@ -22,7 +22,7 @@ interface BootOptions {
   atFileSearch?: (sessionId: SessionId, signal: AbortSignal) => Promise<RemoteResult<readonly { path: string; relative: string; kind: 'file' | 'dir' }[]>>
   atFileGetSettings?: () => Promise<RemoteResult<AtFileSettings>>
   atFileUpdateSettings?: (update: AtFileSettingsUpdate) => Promise<RemoteResult<AtFileSettings>>
-  openPath?: () => Promise<{ result: { ok: true } | { ok: false; error: { message: string } } }>
+  openPath?: () => Promise<{ ok: true; value: { opened: true } } | { ok: false; error: { code: string; message: string; details: object } }>
   enabled?: boolean
   ignoreFiles?: readonly string[]
   workspaceIgnoreFiles?: readonly WorkspaceIgnoreFiles[]
@@ -44,7 +44,7 @@ async function boot(options: BootOptions = {}) {
   const bind = vi.fn(() => (key: string, params?: Record<string, string>) => (params?.message ? `${key}: ${params.message}` : key))
   const slotsRegister = vi.fn()
   const slotsInject = vi.fn((_name: string, factory: () => void) => { factory() })
-  const openPath = vi.fn(options.openPath ?? (async () => ({ result: { ok: true as const } })))
+  const openPath = vi.fn(options.openPath ?? (async () => ({ ok: true as const, value: { opened: true as const } })))
   let settings: AtFileSettings = {
     enabled: options.enabled ?? true,
     ignoreFiles: [...options.ignoreFiles ?? DEFAULT_IGNORE_FILES],
@@ -59,8 +59,7 @@ async function boot(options: BootOptions = {}) {
     return { ok: true as const, value: settings }
   }))
   ctx.provide('inputTriggers', { registerSource, sessionOf })
-  ctx.provide('connection', { api: { host: { openPath } } })
-  ctx.provide('remote', { $mount: mount })
+  ctx.provide('remote', { $mount: mount, session: { openWorkspacePath: openPath } })
   if (options.withoutNamespace !== true) {
     ctx.provide('remote.atFile', {
       search: options.atFileSearch ?? (async () => ({ ok: true as const, value: [] })),
@@ -120,7 +119,7 @@ const signal = () => new AbortController().signal
 
 describe('dsh-at-any client apply', () => {
   it('declares the picker and carrier services', () => {
-    expect(inject).toEqual(['inputTriggers', 'sessions', 'connection', 'remote', 'slots', 'locale'])
+    expect(inject).toEqual(['inputTriggers', 'sessions', 'remote', 'slots', 'locale'])
   })
 
   it('mounts the atFile Remote contribution and registers the @ source', async () => {
@@ -428,12 +427,12 @@ describe('dsh-at-any client apply', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     try {
       const atFileSearch = vi.fn(async () => ({ ok: true as const, value: [{ path: '/ws/a.ts', relative: 'a.ts', kind: 'file' }] }))
-      const booted = await boot({ atFileSearch, openPath: async () => ({ result: { ok: false, error: { message: 'nope' } } }) })
+      const booted = await boot({ atFileSearch, openPath: async () => ({ ok: false as const, error: { code: 'test', message: 'nope', details: {} } }) })
       await registered(booted).candidates(s1, { query: 'a', position: 'inline', signal: signal() })
       const dock = booted.slotsRegister.mock.calls.find(call => call[0]?.name === 'conversation.input.dock')?.[0] as { inject: (id: string) => { onOpen: (p: string) => void } }
       dock.inject('s1').onOpen('a.ts')
       await Promise.resolve()
-      expect(errorSpy).toHaveBeenCalledWith('[dsh-at-any] open failed:', 'nope')
+      expect(errorSpy).toHaveBeenCalledWith('[dsh-at-any] open failed:', 'test', 'nope')
     } finally {
       errorSpy.mockRestore()
     }
@@ -501,8 +500,7 @@ describe('dsh-at-any client apply', () => {
     const unmount = vi.fn(async () => {})
     const registerDispose = vi.fn()
     ctx.provide('inputTriggers', { registerSource: vi.fn(() => registerDispose) })
-    ctx.provide('connection', { api: { host: { openPath: async () => ({ result: { ok: true as const } }) } } })
-    ctx.provide('remote', { $mount: vi.fn(async () => unmount) })
+    ctx.provide('remote', { $mount: vi.fn(async () => unmount), session: { openWorkspacePath: async () => ({ ok: true as const, value: { opened: true as const } }) } })
     ctx.provide('remote.atFile', {
       search: async () => ({ ok: true as const, value: [] }),
       getSettings: async () => ({

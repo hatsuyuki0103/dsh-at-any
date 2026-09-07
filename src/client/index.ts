@@ -8,15 +8,20 @@
  */
 // Type-only: the ctx.remote merge and the forwarded Host-event face.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
-import type { ConnectionHandle, SessionId } from '@deepseek-ai/dsh-api-remotes/client'
-import {
-  createSnapshotStore,
-  type ClientContext,
-  type ISessions,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
+import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { InputTriggerServiceContract } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 // Type-only: the conversation SlotMap / standard-kit merges for the dock seat.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+// Type-only: the ctx.slots / uiRenderer Context merge from the renderer package.
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
+// Type-only: global (useSessions) and session standard-kit merges.
+import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
+// Type-only: the session/openWorkspacePath Remote namespace face.
+import type {} from '@deepseek-ai/dsh-api-session-controller/remote'
 // Type-only: the ctx.locale Context merge.
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: brings the settings.section SlotMap declaration into this program.
@@ -37,8 +42,8 @@ import {
   workspacePathKey,
 } from '../defaults.ts'
 
-/** Required services: picker pipeline, session projection, carrier, Remote face, slots, and locale. */
-export const inject = ['inputTriggers', 'sessions', 'connection', 'remote', 'slots', 'locale']
+/** Required services: picker pipeline, session projection, Remote face, slots, and locale. */
+export const inject = ['inputTriggers', 'sessions', 'remote', 'slots', 'locale']
 
 /** The mounted atFile namespace service's callable face. */
 interface AtFileNamespaceFace {
@@ -136,9 +141,10 @@ export function apply(ctx: ClientContext): void {
     }
   }, 'dsh-at-any: remote')
 
-  const connection = ctx.get('connection') as ConnectionHandle
   const inputTriggers = ctx.get('inputTriggers') as InputTriggerServiceContract
-  const sessions = ctx.get('sessions') as unknown as ISessions
+  // The host-side dsh-session Context merge also declares `sessions`
+  // (SessionStore); the client ISessions face wins here.
+  const sessions = ctx.sessions as unknown as ISessions
   const t = ctx.locale.bind(NS)
 
   // Relative → entry map backing the dock's open action (resolves a draft
@@ -193,16 +199,12 @@ export function apply(ctx: ClientContext): void {
     }
   }, 'dsh-at-any: source (settings-gated)')
 
-  // The wire face of host.openPath (typed structurally: the connection
-  // handle's IApiClient type lives behind the apiproxy package this plugin
-  // does not import).
-  interface OpenPathResponse {
-    result: { ok: true } | { ok: false; error: { message: string } }
-  }
-
+  // The wire face of session/openWorkspacePath: the Host hands a workspace
+  // path to its native opener. The generated Remote namespace is the 0.1.2
+  // successor of the old connection.api.host.openPath channel.
   const openPath = (path: string): void => {
-    void connection.api.host.openPath({ path }).then((response: OpenPathResponse) => {
-      if (!response.result.ok) console.error('[dsh-at-any] open failed:', response.result.error.message)
+    void ctx.remote.session.openWorkspacePath({ path }).then((response) => {
+      if (!response.ok) console.error('[dsh-at-any] open failed:', response.error.code, response.error.message)
     }, (error: unknown) => {
       console.error('[dsh-at-any] open failed:', error)
     })

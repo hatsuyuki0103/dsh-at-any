@@ -8,10 +8,9 @@
  * deps: the browser bundle wires the real Remote and clock, tests wire stubs.
  */
 import type { InputTriggerCandidate, InputTriggerSource } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
-import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { basenameOf, dirnameOf } from './model.ts'
 import { rankFiles } from './search.ts'
-import { fileIcon } from './icons.tsx'
 import type { FileEntry } from './remote.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-input-trigger/client' {
@@ -77,9 +76,8 @@ function candidateRows(files: readonly FileEntry[]): readonly AtFileCandidate[] 
       name: duplicate && directory !== '' ? `${basename} - ${directory}` : basename,
       value: file.relative,
       atFileKind: file.kind,
-      // The standing contract types icons as text. React renders this in-memory
-      // element directly; no icon markup crosses the Host boundary.
-      icon: fileIcon(file) as unknown as string,
+      // The 0.1.2 candidate contract narrows icons to the menu's string union.
+      icon: file.kind === 'dir' ? 'folder' : 'file',
       ...(directory === '' ? {} : { description: directory }),
     }
   })
