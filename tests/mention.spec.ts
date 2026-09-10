@@ -28,11 +28,30 @@ describe('expandMentions', () => {
     try {
       const injections = await expandMentions([user('read @a.ts')], root, new AbortController().signal)
       expect(injections).toHaveLength(1)
-      expect(injections[0]!.source).toEqual({ kind: 'at-file-mention', relative: 'a.ts' })
+      expect(injections[0]!.source).toEqual({ kind: 'plugin', plugin: 'dsh-at-any' })
       expect(injections[0]!.content[0]).toEqual({
         type: 'text',
         text: '<workspace-reference path="a.ts" kind="file" />',
       })
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('emits a source the harness migration admits, and never carries a path', async () => {
+    // Regression guard: the durable log boundary validates source members
+    // exactly, so any extra member (or an unregistered `kind`) makes every
+    // Session that recorded it permanently unreadable.
+    const root = await mkdtemp(join(tmpdir(), 'dsh-at-any-mention-'))
+    await writeFile(join(root, 'a.ts'), 'x\n')
+    try {
+      const injections = await expandMentions([user('read @a.ts')], root, new AbortController().signal)
+      const source = injections[0]!.source
+      expect(source.kind).toBe('plugin')
+      expect(typeof (source as { plugin?: unknown }).plugin).toBe('string')
+      expect((source as { plugin: string }).plugin).not.toBe('')
+      expect(Object.keys(source).sort()).toEqual(['kind', 'plugin'])
+      expect(JSON.stringify(source)).not.toContain('a.ts')
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -164,7 +183,7 @@ describe('mentionPreStep', () => {
       )
       expect(decision.kind).toBe('enter')
       expect(decision.messages).toHaveLength(1)
-      expect(decision.messages![0]!.source).toEqual({ kind: 'at-file-mention', relative: 'a.ts' })
+      expect(decision.messages![0]!.source).toEqual({ kind: 'plugin', plugin: 'dsh-at-any' })
     } finally {
       await rm(root, { recursive: true, force: true })
     }

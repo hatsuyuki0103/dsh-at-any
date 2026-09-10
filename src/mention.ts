@@ -19,12 +19,8 @@ export interface Mention {
   readonly kind: 'file' | 'dir'
 }
 
-/** The source tag the injected reference carries (transcript consumers use it). */
-declare module '@deepseek-ai/dsh-llm' {
-  interface MessageSourceMap {
-    'at-file-mention': { kind: 'at-file-mention'; relative: string }
-  }
-}
+/** The plugin name the injected reference attributes itself to. */
+const PLUGIN_SOURCE_NAME = 'dsh-at-any'
 
 /** The user-message source kind this boundary scans (external text cannot forge it). */
 const USER_SOURCE_KIND = 'user'
@@ -93,6 +89,18 @@ function referenceForm(mention: Mention): string {
 }
 
 /**
+ * Attribute one injected reference to this plugin. `source` is a closed,
+ * merge-extensible union whose nested members are validated exactly when a
+ * Session is later migrated, so the reference path must never ride `source`:
+ * an extra member makes the durable log permanently unreadable. The path is
+ * already carried by the message content (`referenceForm`).
+ * @returns the admitted plugin source for the injected message.
+ */
+function pluginSource(): UserMessage['source'] {
+  return { kind: 'plugin', plugin: PLUGIN_SOURCE_NAME }
+}
+
+/**
  * Expand every `@path` mention into a validated existence-only reference, in
  * first-seen order. Unknown paths stay plain prose.
  * @param messages - the assembled step messages.
@@ -121,7 +129,7 @@ export async function expandMentions(
     if (mention === undefined) continue
     injections.push(createUserMessage({
       content: [{ type: 'text', text: referenceForm(mention) }],
-      source: { kind: 'at-file-mention', relative: mention.relative },
+      source: pluginSource(),
     }))
   }
   return injections

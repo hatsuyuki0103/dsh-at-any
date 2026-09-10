@@ -43,10 +43,12 @@ The default index skips common version-control directories, IDE metadata, depend
 ## Install or Update
 
 ```sh
-dsh plugin --profile web add https://github.com/hatsuyuki0103/dsh-at-any/archive/refs/tags/v0.1.0.tar.gz
+dsh plugin --profile web add https://github.com/hatsuyuki0103/dsh-at-any/archive/refs/tags/v0.1.3.tar.gz
 ```
 
-Use the same command to update an existing installation. Restart `dsh web` after installation so the Host and browser client load version `0.1.0`.
+Use the same command to update an existing installation. Restart `dsh web` after installation so the Host and browser client load version `0.1.3`.
+
+> **Upgrading from 0.1.2 or earlier is required, not optional**: those versions recorded `@path` references in a `source` shape the Harness refuses when it migrates a Session log, which made **every Session that used an `@` reference permanently unreadable** ("cannot safely transform unclassified message source"). 0.1.3 writes the admitted `{ kind: 'plugin', plugin: 'dsh-at-any' }` source instead. Sessions already damaged by an earlier version must be repaired before they can load again — see Troubleshooting.
 
 > **Replacing dsh-at-file**: this plugin shares the `atFile` service namespace with dsh-at-file, so the two must not be enabled at the same time. Migration: remove the old plugin first (edit the profile `package.json` and delete the `"dsh-at-file": "file:..."` dependency line, or run `dsh plugin --profile web remove dsh-at-file`), then install this plugin and restart `dsh web`.
 
@@ -104,6 +106,18 @@ The active agent may lack a tool for a particular file format. DSH provides `rea
 - **Files missing from the `@` picker**: the picker index is cached per session for 30 seconds and re-walks on first search after a restart. If files are still missing after a restart, check Settings -> File mentions for an `Exact`/`Regex` filter that matches their names, and confirm the files are not inside an artifact directory (`target`/`dist`/`node_modules`/...) skipped by the default ignore list.
 - **Old plugin still active**: dsh-at-any shares the `atFile` service namespace with dsh-at-file — remove dsh-at-file from the profile (`package.json` dependency + `dsh.profile.bundles` list) before or together with installing dsh-at-any, then restart `dsh web`.
 - **Changes to `src/` require a rebuilt `lib/`**: `lib/` is committed (profile installs run without a build). Run `node build.mjs` after editing `src/` and commit both. If you only patch the built bundle, keep `src/` in sync.
+- **Session history will not load: `cannot safely transform unclassified message source`** (0.1.2 and earlier): those versions recorded `@path` references in a `source` shape the Harness refuses, and the format migration is all-or-nothing, so the whole Session artifact is unreadable. Confirm the damage and repair it with the bundled tool:
+
+  ```sh
+  node tools/repair-session-sources.mjs --self-test
+  node tools/repair-session-sources.mjs --check C:/Users/you/.dsh/sessions
+  node tools/repair-session-sources.mjs --dry-run C:/Users/you/.dsh/sessions
+  node tools/repair-session-sources.mjs --apply  C:/Users/you/.dsh/sessions
+  ```
+
+  `--check` and `--dry-run` never write anything, and `--apply` backs each artifact up (byte-identical, digest-verified) before rebuilding it and validating the result through the real Harness migration. Repair rewrites only the offending `source` objects to `{ kind: 'plugin', plugin: 'dsh-at-any' }`; the referenced path is untouched because it lives in the message content.
+
+  The tool scans every Session generation (`session.jsonl` and `session.v<N>.jsonl`, compressed or not) and reports which generation the backend actually loads, because a stale lower generation can sit beside the artifact in use. It resolves the Harness migration catalog from `--harness <dir>` (defaults to the global install); if no catalog is found, `--apply` refuses to run rather than writing an unvalidated result — pass `--no-validate` only if you deliberately want that. Run `--self-test` first if you want to see the safety contract exercised on a throwaway session. Restart `dsh web` afterwards. Newly written Sessions are unaffected once you are on 0.1.3.
 
 ## Development
 

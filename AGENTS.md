@@ -28,11 +28,17 @@ src/client/         browser half, served as the single file /plugins/dsh-at-any/
   FilesDock.tsx     input.dock rows parsed from the draft's @path tokens (open/remove)
   SettingsSection.tsx  native enable checkbox plus Global/Workspace Exact/Regex filter manager
 tests/              node-env specs; jsdom pragma on the browser specs
+tools/              standalone operator tools (not bundled, shipped in the package `files`)
+  repair-session-sources.mjs  normalize session logs damaged by <=0.1.2; has its own `--self-test`
 ```
 
 ## Contracts with the harness (do not drift)
 
-- The wire endpoints are `atFile/search`, `atFile/getSettings`, and `atFile/updateSettings`. File content NEVER crosses the wire or the Host mention boundary: `agent/pre-step` validates each `@path` and injects only `<workspace-reference path="…" kind="file|directory" />` with source `at-file-mention`. The agent decides whether and how to inspect it with available tools.
+- The wire endpoints are `atFile/search`, `atFile/getSettings`, and `atFile/updateSettings`. File content NEVER crosses the wire or the Host mention boundary: `agent/pre-step` validates each `@path` and injects only `<workspace-reference path="…" kind="file|directory" />` with source `{ kind: 'plugin', plugin: 'dsh-at-any' }`. The agent decides whether and how to inspect it with available tools.
+- The injected message MUST use the harness's admitted `plugin` source exactly: `{ kind: 'plugin', plugin: 'dsh-at-any' }` and nothing else. `MessageSourceMap` is merge-extensible for **types only** — the durable log boundary validates source members exhaustively, so a source the harness does not classify makes every Session that recorded it permanently unreadable. Concretely:
+  - `pluginSourceValue` (`dsh-session-format-v0-to-v1`) requires `kind` + `plugin` and admits only `form`/`sections`/`summary` on top (plus `compactionId`/`sourceCommandId` when `plugin === 'compact'`). Any other member fails with `… source has unexpected member "<key>"`.
+  - `assertSource` (`dsh-session-format-v2-to-v3`) additionally requires the `kind` to be a registered one; an invented `kind` such as `at-file-mention` fails with `cannot safely transform unclassified message source` — on the current v3 path too, not only v0.
+  - Because the format migration is all-or-nothing, either failure refuses the whole artifact and the history never loads again. Reference paths ride the message content, never `source`.
 - The Host Gateway resolves the endpoint through the **strict Typert manifest** (`src/typert.ts`, registered via `ctx.typert.register`) — never through `@Remote` marker tables, because the harness's source-launch dev environment loads the gateway from protocol `src` while a profile-loaded plugin bundle loads protocol `lib` (two marker tables). The `@Remote` decorator stays for documentation and lib-consistent deployments.
 - The descriptor set lives in `src/contract.ts` and is shared verbatim by the host manifest and the client contribution; the agent lookup codec's `typeSymbol` must stay `@deepseek-ai/dsh-session/types#SessionId`. File filters accept legacy strings and structured `{ kind, pattern, caseSensitive }` rules. Legacy strings mean case-insensitive Exact matching.
 - The client composes only through the standing seams (`ctx.remote.$mount`, `inputTriggers.registerSource`, `ctx.slots.register`, `ctx.locale.register`, and a registrant-private `createSnapshotStore`). The mounted Remote namespace is resolved through `ctx.reflect.get('remote.atFile')` — NOT the dotted `ctx.remote.atFile` read, which walks the fiber chain and stops at the Loader's runtime-less forks (verified live; the store path resolves by isolation label).
@@ -43,6 +49,8 @@ tests/              node-env specs; jsdom pragma on the browser specs
 ## Check ladder
 
 `pnpm run check` (typecheck + tests + build) must be green before every commit; `lib/` is committed (file: profile installs run without a build). Coverage: statements/branches/lines 100% per source file (`src/types.ts` is type-only and excluded); defensive arms take a `/* v8 ignore -- reason */` comment.
+
+`tools/` is outside the vitest/tsc include set because it is a standalone operator script, so `pnpm run check` does NOT cover it. It carries its own end-to-end test instead: **`node tools/repair-session-sources.mjs --self-test` must pass before every commit that touches `tools/`.** That self-test spawns the real CLI against a synthetic damaged session and asserts the safety contract (`--check`/`--dry-run` never write, `--apply` backs up byte-identically and gates publication on the real migration, versioned `session.v<N>.jsonl.zstd` artifacts are discovered, and `--apply` fails closed without a migration catalog). A defect that overwrote its own backups shipped once because this script had no test — do not remove it.
 
 ## Copy
 

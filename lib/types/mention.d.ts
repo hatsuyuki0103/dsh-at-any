@@ -6,15 +6,6 @@ export interface Mention {
     readonly relative: string;
     readonly kind: 'file' | 'dir';
 }
-/** The source tag the injected reference carries (transcript consumers use it). */
-declare module '@deepseek-ai/dsh-llm' {
-    interface MessageSourceMap {
-        'at-file-mention': {
-            kind: 'at-file-mention';
-            relative: string;
-        };
-    }
-}
 /**
  * Scan one text block for `@path` tokens, deduplicated in first-seen order.
  * A trailing slash (the directory chip form) is stripped from the path.

@@ -2,6 +2,28 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 格式，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.3] - 2026-09-10
+
+### Fixed
+
+- **`@path` 引用导致会话历史永久无法加载（严重）**：注入的 `user/message` 把路径写进了 `source`（`{ kind: 'at-file-mention', relative: '…' }`）。`MessageSourceMap` 的「可合并扩展」只是**类型层**承诺；会话日志边界会**逐键校验** `source`。于是两种形状各以不同方式被拒绝：
+  - `{ kind: 'at-file-mention', relative }` —— `at-file-mention` 不是已登记的 source kind，报 `cannot safely transform unclassified message source`；
+  - `{ kind: 'plugin', relative }`（缺少 `plugin` 名、多出 `relative`）—— 报 `@deepseek-ai/dsh-session-format-v0-to-v1 refuses this format v0 Session: user/message <seq> source has unexpected member "relative"`；
+
+  两种都会让**整份会话产物**被迁移拒绝（`source v0 artifact remains unchanged`）。因此**只要用过一次 `@` 引用，该会话历史就再也打不开**——不是单条消息降级，而是整份会话不可读。`pluginSourceValue` 对 `kind: 'plugin'` 只接受 `kind` + `plugin`（外加 `form`/`sections`/`summary`，以及 `plugin === 'compact'` 时的 `compactionId`/`sourceCommandId`）。
+  - 现在注入 `{ kind: 'plugin', plugin: 'dsh-at-any' }`：删除自造的 `at-file-mention` 类型合并与 `relative` 成员。
+  - 引用路径并未丢失：它本来就完整存在于消息内容里（`<workspace-reference path="…" kind="file|directory" />`）。
+  - `AGENTS.md` 契约条目与 `tests/mention.spec.ts` 断言同步更新，并新增回归用例（`source` 键必须恰为 `['kind','plugin']`，且序列化后不得包含路径），防止再次漂移。
+  - 新增 `tools/repair-session-sources.mjs`：按 `--check` / `--dry-run` / `--apply` 修复已被旧版写坏的会话产物。只改 `source`，先做**逐字节校验的备份**，再经过**真实迁移链验证**才落盘；无 Harness 迁移目录时拒绝执行（fail closed）而非降级为无验证写入。`--self-test` 在临时目录用合成坏会话验证上述保证（含 `--check`/`--dry-run` 绝不写入、备份与原件逐字节一致、以及按代际命名 `session.v<N>.jsonl.zstd` 的发现与「后端实际加载哪一代」的判定）。
+  - README 新增 Troubleshooting：如何确认会话是否已被旧版损坏，以及修复/备份方式。
+- 同步 `README.md` 安装命令与版本号到 v0.1.3（此前仍停留在 v0.1.0），`dsh.plugin.json` 版本号对齐 `package.json`（此前滞后于 0.1.1）。
+
+### Migration
+
+- 升级必须：旧版本写入的坏 `source` 已落盘，仅升级插件不会让这些历史自动恢复，需按 README Troubleshooting 归一化后才能加载。新写入的会话不再受影响。
+
+[0.1.3]: https://github.com/hatsuyuki0103/dsh-at-any/releases/tag/v0.1.3
+
 ## [0.1.2] - 2026-09-02
 
 ### Fixed
